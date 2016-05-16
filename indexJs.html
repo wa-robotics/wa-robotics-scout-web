@@ -1,4 +1,32 @@
 <script>
+  $(document).ready(function() {
+    $('#feedback-form-link').click(function(e) {
+      e.preventDefault();
+      if (reqFromAndroidApp) { //make sure this function can't be accidentally run from outside the Android app
+        Android.openFeedbackForm();
+      }
+    });
+    $('#default-team-save').click(saveDefaultTeam);
+  });
+  
+  function saveDefaultTeam() {
+    var defaultTeam = $('#default-team-select').val();
+    google.script.run
+      .withSuccessHandler(
+        function(returnVal, element) {
+          console.log("Saved default team: " + returnVal);
+          document.querySelector('#default-team-select-dialog').close(); //the default team was successfully saved; now load this team's matches
+          queryTeam = defaultTeam;
+          userTeam = defaultTeam;
+          getTeamMatches(queryTeam);
+      })
+      .withFailureHandler(
+        function(error, element) {
+          console.error("Saving default team failed: " + error);
+        })
+      .saveDefaultTeam(defaultTeam);
+  }
+
   function processResults (value) {
     var currentMatch;
     var alliance;
@@ -14,8 +42,12 @@
     var matchDone = false;
     var matchResultsString = "";
     var scoresString = "";
-    var scoreAvailable = false;
-    
+    var scoreAvailable = false,
+        androidAppUrl,
+        matchDetailsJsAndroid,
+        matchLetter,
+        matchDescriptor;
+
     $('#match-container').empty(); //this is actually the second emptying of this div; this time, we're removing the loading indication now that the match data has loaded and just needs to be processed
     
     console.log(value);
@@ -31,15 +63,21 @@
        } else if (currentMatch.red2 === queryTeam) {
           alliance = "red-alliance";
           alliancePosition = "red2";
+       } else if (currentMatch.red3 === queryTeam) {
+          alliance = "red-alliance";
+          alliancePosition = "red3";
        } else if (currentMatch.blue1 === queryTeam) {
           alliance = "blue-alliance";
           alliancePosition = "blue1";
        } else if (currentMatch.blue2 === queryTeam) {
           alliance = "blue-alliance";
           alliancePosition = "blue2";
+       }  else if (currentMatch.blue3 === queryTeam) {
+          alliance = "blue-alliance";
+          alliancePosition = "blue3";
        }
      
-       if (currentMatch.bluescore !== "" && currentMatch.redscore !== "") {
+       if (currentMatch.bluescore > 0 && currentMatch.redscore > 0) { //if both scores equal to 0 (when the RobotEvents used by WARS returns an empty score, it gets converted to 0 by Google Sheets)
          scoreAvailable = true;
          effectiveAllianceColor = "match-done";
        } else {
@@ -47,24 +85,54 @@
        }
       //determine partner for this match
       if (alliance === "red-alliance") {
-        if (alliancePosition === "red1") {
-          partner = currentMatch.red2;
-        } else { //this team is red2, so partner is red1
-          partner = currentMatch.red1;
+        switch (alliancePosition) {
+          case "red1":
+            partner = currentMatch.red2; //this team is red1, so the partner is red2
+            if (currentMatch.round >= 3) { //also add the third team for elimination matches
+              partner += "/" + currentMatch.red3;
+            }
+            break;
+          case "red2":
+            partner = currentMatch.red1; //this team is red2, so the partner is red1
+            if (currentMatch.round >= 3) { //also add the third team for elimination matches
+              partner += "/" + currentMatch.red3;
+            }
+            break;
+          case "red3":
+            partner = currentMatch.red1 + "/" + currentMatch.red2; //no need for an if statement to check if this is an elimination match for this case since the presence of red3 as an alliance position indicates this
+            break;
         }
       } else if (alliance === "blue-alliance") {
-        if (alliancePosition === "blue1") {
-          partner = currentMatch.blue2;
-        } else { //this team is blue2, so partner is blue1
-          partner = currentMatch.blue1;
+         switch (alliancePosition) {
+          case "blue1":
+            partner = currentMatch.blue2; //this team is blue1, so the partner is blue2
+            if (currentMatch.round >= 3) { //also add the third team for elimination matches
+              partner += "/" + currentMatch.blue3;
+            }
+            break;
+          case "blue2":
+            partner = currentMatch.blue1; //this team is blue2, so the partner is blue1
+            if (currentMatch.round >= 3) { //also add the third team for elimination matches
+              partner += "/" + currentMatch.blue3;
+            }
+            break;
+          case "blue3":
+            partner = currentMatch.blue1 + "/" + currentMatch.blue2; //no need for an if statement to check if this is an elimination match for this case since the presence of red3 as an alliance position indicates this
+            break;
         }
       }
       
       //determine and construct a string containing both teams in the opposing alliance
       if (alliance === "red-alliance") {
         opponents = currentMatch.blue1 + "/" + currentMatch.blue2;
+        if (currentMatch.round >= 3) { //if this is an elimination match, add the third opposing team
+          opponents += "/" + currentMatch.blue3;
+        }
       } else {
         opponents = currentMatch.red1 + "/" + currentMatch.red2;
+        if (currentMatch.round >= 3) { //if this is an elimination match, add the third opposing team
+          opponents += "/" + currentMatch.red3;
+        }
       }
       
       //output the match result if available
@@ -96,14 +164,44 @@
           matchResultsString = '<span class="' + alliance + '-text"><strong>You '+ matchResult + '</strong></span> ' + scoresString + '<br />';
         }
       }
+      //console.log("reqFromAndroidApp: " + reqFromAndroidApp);
+      //console.log("typeof reqFromAndroidApp: " + typeof reqFromAndroidApp);
       
+      if (reqFromAndroidApp === "true") { //if the user is using the WARS Web Android app.  The if statement is formatted like this because reqFromAndroidApp is a string (apparently.)
+        androidAppUrl = "&fromandroidapp"; //add a URL GET parameter so that the details page doesn't show the header
+        matchDetailsJsAndroid = ' onclick="Android.deselectNavDrawerItems()"'; //add a function that runs when the match details link is clicked in the Android app to deselect the currently selected item in the nav drawer
+        //console.log("Line 111 ran");
+      } else {
+        androidAppUrl = ""; //if the user is not using the Android app, don't add anything to the URL
+        matchDetailsJsAndroid = ""; //if the user is not using the Android app, don't add any function to be run when the match details link is clicked
+        //console.log("Line 114 ran");
+      }
+      //console.log("AndroidAppUrl: " + androidAppUrl);
       //for now, the first part of this URL will be hard-coded; in the future there will need to be a method to keep track of what users are using what WARS instances
-      detailsURL = "https://script.google.com/a/macros/woodward.edu/s/AKfycbzjo4-KCrLdrFOcpJCwg3kwWYenjFyV8C6aAxfVZs4/exec?page=match&match=" + currentMatch.matchnumber;
+      detailsURL = "https://script.google.com/a/macros/woodward.edu/s/AKfycbzjo4-KCrLdrFOcpJCwg3kwWYenjFyV8C6aAxfVZs4/exec?page=match&match=" + currentMatch.matchnumber + androidAppUrl;
+  
       
+      if (parseInt(value.results[i].round === 1) || parseInt(value.results[i].round) === 2) {
+        matchLetter = parseInt(currentMatch.round) === 1 ? "P" : "Q";
+        matchDescriptor = matchLetter + currentMatch.matchnumber;
+      } else { //this is a quarterfinals, semifinals, or finals match
+        switch (parseInt(currentMatch.round)) {
+        case 3: //quarterfinal matches, QF1-1
+          matchLetter = "QF";
+          break;
+        case 4: //quarterfinal matches, QF1-1
+          matchLetter = "SF";
+          break;
+        case 5: //quarterfinal matches, QF1-1
+          matchLetter = "F";
+          break;
+        }
+        matchDescriptor = matchLetter + currentMatch.instance + "-" + currentMatch.matchnumber;
+      }
       
-      var matchInfo = '<div class="mdl-cell--2-col mdl-cell--3-col-tablet mdl-cell--3-col-desktop"><div class="match-info-card mdl-card mdl-shadow--2dp ' + effectiveAllianceColor + '"><div class="mdl-card__title"><h4 id="match-num">Q'
-                        + value.results[i].matchnumber + '</h4></div><div class="mdl-card__supporting-text">' + matchResultsString + '<em>With</em> ' + partner + '<br /><em>Against</em> ' + opponents + '</div><div class="mdl-card__actions mdl-card--border"><a href="' 
-                        + detailsURL + '" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Details</a><div class="mdl-layout-spacer"></div><i class="material-icons">info_outline</i></div></div></div>'
+      var matchInfo = '<div class="mdl-cell--2-col mdl-cell--3-col-tablet mdl-cell--3-col-desktop"><div class="match-info-card mdl-card mdl-shadow--2dp ' + effectiveAllianceColor + '"><div class="mdl-card__title"><h4 id="match-num">' + matchDescriptor
+                        + '</h4></div><div class="mdl-card__supporting-text">' + matchResultsString + '<em>With</em> ' + partner + '<br /><em>Against</em> ' + opponents + '</div><div class="mdl-card__actions mdl-card--border"><a href="' 
+                        + detailsURL + '"' + matchDetailsJsAndroid + ' class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">Details</a><div class="mdl-layout-spacer"></div><i class="material-icons">info_outline</i></div></div></div>'
       console.log(matchInfo);
       
       $('#match-container').append(matchInfo); 
@@ -116,8 +214,44 @@
     }
   }
   
+  function modalInit() {
+      (function() {
+    'use strict';
+    var dialogButton = document.querySelector('.dialog-button');
+    var dialog = document.querySelector('#default-team-select-dialog');
+    if (! dialog.showModal) {
+      dialogPolyfill.registerDialog(dialog);
+    }
+    dialogButton.addEventListener('click', function() {
+       dialog.showModal();
+    });
+    
+    /*dialog.querySelector('button:not([disabled])')
+    .addEventListener('click', function() {
+      dialog.close();
+    });*/
+  }());
+  }
+  
+  function getDefaultTeamNumber() {
+    google.script.run
+          .withSuccessHandler(function (returnVal) {
+            return returnVal;
+          })
+          .withFailureHandler(function (error) {
+            return false;
+          })
+          .getDefaultTeamNumber();
+  }
+  
+  function updateTeamDropdown() {
+    var selector = '[value="' + queryTeam + '"]';
+    $(selector).attr("selected","selected");
+  }
+  
   function getTeamMatches(queryTeam) {
-    var url="https://script.google.com/a/macros/woodward.edu/s/AKfycbxsKMe0cdyYScaJXipBoA2bFSY8Aj-jxlQqyS4aDOI/exec?prefix=processResults&type=getTeamMatches&id=1vrZQpvtiJvcyKdlULZk5HOyRU5ystAiMZ4y8rF6dJEg&team=" + queryTeam;
+    var url="https://script.google.com/a/macros/woodward.edu/s/AKfycbxsKMe0cdyYScaJXipBoA2bFSY8Aj-jxlQqyS4aDOI/exec?prefix=processResults&type=getTeamMatches&id=" + instanceID + "&team=" + queryTeam;
+    updateTeamDropdown();
     if (userTeam !== queryTeam) {
       if ($('#show-diff-team').hasClass('hidden')) { //only remove the hidden class if it's present
         $('#show-diff-team').removeClass('hidden');
@@ -129,8 +263,13 @@
     $('body').append('<script id="api-request" src="' + url + '"><\/script>');
   }
   
-  var selector = '[value="' + queryTeam + '"]';
-  $(selector).attr("selected","selected");
+  /*if(fromAndroidApp) { //this is a framework that will be used in the future to link the navigation drawer to page loads on the Android app
+     Android.showToast("Testing!");  
+  }*/
+  
+  //modalInit();
+  
+
   $('#team-select').change(function() {
     $('#match-container').empty() //remove the current set of matches being displayed from the page before displaying the new matches (if any); this is located here to prevent confusion of two sets of matches while the new set is loading
                          .prepend('<div class="mdl-cell--12-col"> <em>Loading...</em></div>');
@@ -138,7 +277,19 @@
     queryTeam = $('#team-select').val()
     getTeamMatches(queryTeam);
   });
+  
+  console.log("queryTeam is " + queryTeam);
+  console.log("Show default team selection modal? " + promptDefaultTeam);
   console.log(queryTeam);
   console.log(userTeam);
-  getTeamMatches(queryTeam);
+  
+  console.log("promptDefaultTeam is " + promptDefaultTeam + " of type " + typeof promptDefaultTeam);
+  if (promptDefaultTeam === "true") { //promptDefaultTeam becomes a string when it is inserted into a script tag (in index.html) with a printing scriptlet
+    var dialog = document.querySelector('#default-team-select-dialog');
+    console.log("promptDefaultTeam is " + promptDefaultTeam);
+    dialog.showModal();
+  } else if(queryTeam) {
+    getTeamMatches(queryTeam);
+  }
+  
 </script>
