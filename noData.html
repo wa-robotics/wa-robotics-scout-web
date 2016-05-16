@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <title>WA Robotics Scout Web</title>
+    <?!= HtmlService.createHtmlOutputFromFile('globalStyles').getContent(); ?>
+    <link rel="stylesheet" href="https://storage.googleapis.com/code.getmdl.io/1.0.6/material.blue_grey-deep_orange.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    
+    <?!= HtmlService.createHtmlOutputFromFile('errorPageStyles').getContent(); ?>
+  </head>
+  <body class="mdl-color--grey-50">
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+      <header class="mdl-layout__header">
+        <div class="mdl-layout__header-row">
+          <span class="mdl-layout-title">WA Robotics Scout Web</span>
+        </div>
+      </header>
+      <main class="mdl-layout__content">
+      <div class="error-card mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title">
+          <h4><i class="material-icons">warning</i> No WA Robotics Scout instance found</h4> 
+        </div>
+        <div class="mdl-card__supporting-text">
+           WARS Web can't show any data for the WARS instance ID supplied.<br />
+           <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored">
+                Find a WARS instance
+              </button>
+      </div>
+      </div>
+     </main>
+    </div>
+    <script src="https://storage.googleapis.com/code.getmdl.io/1.0.6/material.min.js"></script>
+  </body>
+</html>
+
