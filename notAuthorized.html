@@ -23,6 +23,10 @@
         </div>
         <div class="mdl-card__supporting-text">
            You can't view this WARS instance in WARS Web because you don't have permission to view the WARS spreadsheet.
+           
+           <? if (debugString) { ?>
+             <p>Debug info: <?= debugString ?></p>
+           <? } ?>
       </div>
       </div>
      </main>
