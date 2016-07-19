@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <title>WA Robotics Scout Web</title>
+    <?!= HtmlService.createHtmlOutputFromFile('globalStyles').getContent(); ?>
+    <?!= HtmlService.createHtmlOutputFromFile('scoutingFormStyles').getContent(); ?>
+    <link rel="stylesheet" href="https://code.getmdl.io/1.1.3/material.blue_grey-orange.min.css" />
+    <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <?!= HtmlService.createHtmlOutputFromFile('dialogPolyfillCss').getContent(); ?>
+  </head>
+  <body class="mdl-color--grey-50">
+   <script>var queryTeam = <?= teamToLookUp ?>,
+               userTeam = <?= teamMemberTeamNum ?>,
+               reqFromAndroidApp = <?= reqFromAndroidApp ?>,
+               instanceID = <?= instanceID ?>,
+               promptDefaultTeam = <?= promptDefaultTeam ?>;
+   </script> <!--This lets the Javascript on this page use variables passed from the server.-->
+    <? if(!reqFromAndroidApp) { ?>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+      <header class="mdl-layout__header">
+        <div class="mdl-layout__header-row">
+          <span class="mdl-layout-title">WA Robotics Scout Web</span>
+        </div>
+      </header>
+      <div class="mdl-layout__drawer">
+        <span class="mdl-layout-title">WARS Web</span>
+        <nav class="mdl-navigation">
+          <a class="mdl-navigation__link" href="https://script.google.com/a/macros/woodward.edu/s/AKfycbzjo4-KCrLdrFOcpJCwg3kwWYenjFyV8C6aAxfVZs4/exec?page=main">My matches</a>
+          <a class="mdl-navigation__link" href="https://script.google.com/a/macros/woodward.edu/s/AKfycbzjo4-KCrLdrFOcpJCwg3kwWYenjFyV8C6aAxfVZs4/exec?page=team-search">Team search</a>
+        </nav>
+      </div>
+    
+      <?} ?>
+      <main class="mdl-layout__content">
+        <div class="page-content">
+
+          <div class="question">Which team are you scouting?<br /><p><em>Selecting a team will automatically select the associated match</em></p>
+            <div id="team-select-container" class="hidden">
+              <p  id="select-other-match"><a href="#">Select other...</a></p>
+             </div>
+             <div id="match-selector-data-loading" class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active"></div>
+             
+             <div class="hidden" id="show-other">
+               <p class="hidden" id="match-is-visible"><i class="material-icons">info_outline</i> That match is already visible</p>
+               <p id="other-match-sel-instructions">Enter match number (qualification matches only):</p>
+               
+               Q
+               <div class="mdl-textfield mdl-js-textfield" id="container-other-match-num">
+                 <input class="mdl-textfield__input" type="number" pattern="-?[0-9]*(\.[0-9]+)?" id="other-match-num">
+                 <label class="mdl-textfield__label" for="other-match-num">Match</label>
+                 <span class="mdl-textfield__error">Enter a positive integer greater than 0</span>
+               </div>
+               <button class="mdl-button mdl-js-button mdl-button--icon mdl-button--colored" id="submit-other-match">
+                 <i class="material-icons">check</i>
+               </button>
+             </div>
+             
+          </div>
+
+          <div class="question">
+            <p>When does this team's autonomous play start?<br />
+            <em>After pressing <strong>Start</strong> when the autonomous period begins, simply press <strong>Mark time</strong>
+            to answer this question</em></p>
+            <div class="bar-radio-select-2 bar-radio" id="robot-auton-start">
+              <div class="option">
+                <button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="enter-time">Enter time</button>
+              </div>
+              <div class="option">
+                <button class="hidden mdl-button mdl-js-button mdl-js-ripple-effect mark-time-auton" disabled>Mark time</button>
+                <div class="" id="confirmation"><i class="material-icons">check</i> Got it!<br />
+                 <button class="mdl-button mdl-js-button mdl-js-ripple-effect mark-time-auton">Undo</button></div>
+              </div>
+            </div>
+          </div>
+
+
+          
+          
+        </div>
+        
+        <div id="match-timer" class="timer-stopped">
+          <div id="ready-auton"><strong>Ready for autonomous</strong> <button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="start-auton-timer">Start</button></div>
+          <div class="hidden" id="auton-timer-running"><strong>Autonomous</strong> in progress <button id="btn-stop-auton" class="mdl-button mdl-js-button mdl-js-ripple-effect">Stop early</button></div>
+          <div class="hidden" id="match-paused">
+            <div id="auton-winner-selection">
+              <span id="auton-winner-direction">Who <strong>won</strong> autonomous?</span> <br />
+              <div class="auton-winner-option option-red-alliance">R</div>
+              <div class="auton-winner-option option-blue-alliance">B</div> 
+              <div class="auton-winner-option option-tie">TIE</div>
+            </div>
+            <div id="driver-start">
+              <button id="btn-driver-start" class="mdl-button mdl-js-button mdl-js-ripple-effect">Start driver</button>
+              <br />
+              <div class="small-text" id="screen-wont-change">Screen won't change until autonomous winner is selected</div>
+            </div>
+          </div>
+          <div class="hidden" id="driver-timer-running"><strong>Driver control</strong> in progress <button id="btn-stop-driver" class="mdl-button mdl-js-button mdl-js-ripple-effect">Stop early</button></div>
+          <div class="hidden" id="match-ended">Match over</div>
+        </div>
+        <div class="footer">
+        </div>
+    </main>
+    </div>
+    <script src="https://code.getmdl.io/1.1.3/material.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <?!= HtmlService.createHtmlOutputFromFile('dialogPolyfillJs').getContent(); ?>
+    <?!= HtmlService.createHtmlOutputFromFile('scoutingFormJs').getContent(); ?>
+  </body>
+</html>

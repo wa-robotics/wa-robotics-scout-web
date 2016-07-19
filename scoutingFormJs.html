@@ -1,0 +1,361 @@
+<script>
+
+function loadMatchData (data, forOtherMatch) {
+    console.log(data);
+    /*data.status = 0;
+    data.error = {message: "Invalid request type specified.  Check API docs." };*/
+    if (data.status) { //api call successful
+      
+      if (data.results.length > 0 && !forOtherMatch) {
+        data.results.forEach(function(matchInfo, index, array) {
+          if (matchInfo.round === 2)  { //only show qualification matches (round 2)
+            matchesVisible.push(matchInfo.matchnumber); //now that we know we can display the match, add it to the array of visible matches
+            $('<div class="team-select"><div class="match-row"> <div class="row-team option-red-alliance">' + matchInfo.red1 + 
+                                               '</div><div class="row-team filler"></div><div class="row-team option-red-alliance">' + matchInfo.red2 + 
+                                               '</div><div class="match-number">Q' + matchInfo.matchnumber + 
+                                               '</div><div class="row-team option-blue-alliance">' + matchInfo.blue1 + 
+                                               '</div><div class="row-team filler"></div><div class="row-team option-blue-alliance">' + matchInfo.blue2 + '</div></div></div>').insertBefore('#select-other-match');
+          }
+          
+        });
+        
+     } else if (data.results && forOtherMatch) {
+       var needToResetMatchSelector = false;
+       //console.log("if ($('#added-by-other').hasClass('selected')) = " + $('#added-by-other').hasClass('red-alliance-selected') || $('#added-by-other').hasClass('blue-alliance-selected'));
+       if ($('#added-by-other').hasClass('red-alliance-selected') || $('#added-by-other').hasClass('blue-alliance-selected')) { //if the currently selected match (before updating the display) is no longer going to be displayed, remove the not-selected classes from the other matches being shown
+         needToResetMatchSelector = true;
+       }
+       
+       var oldMatchNum = parseInt($('#added-by-other.team-select > .match-row > .match-number').text().slice(1));
+       
+       
+       $('#added-by-other').remove();
+       var matchInfo = data.results;
+       //console.log(oldMatchNum);
+       //console.log("typeof omn " + typeof oldMatchNum);
+       if (matchInfo.round === 2)  { //only show qualification matches (round 2)
+            $('#other-match-num').val(""); //clear the other match field
+            if (!isNaN(oldMatchNum)) { //we only need to do this when oldMatchNumber has a value and isn't NaN - i.e., only after the second other search
+              removeFromArray(oldMatchNum, matchesVisible);
+            }
+            matchesVisible.push(matchInfo.matchnumber); //add to array of visible matches
+            var notSelectedPhrase = (matchSelected) ? " not-selected" : ""; //make sure the match added is styled correctly
+            $('<div class="team-select' + notSelectedPhrase +'" id="added-by-other"><div class="match-row"> <div class="row-team option-red-alliance">' + matchInfo.red1 + 
+                                               '</div><div class="row-team filler"></div><div class="row-team option-red-alliance">' + matchInfo.red2 + 
+                                               '</div><div class="match-number">Q' + matchInfo.matchnumber + 
+                                               '</div><div class="row-team option-blue-alliance">' + matchInfo.blue1 + 
+                                               '</div><div class="row-team filler"></div><div class="row-team option-blue-alliance">' + matchInfo.blue2 + '</div></div></div>').insertBefore('#select-other-match');
+        } else if (matchInfo.round < 2 || matchInfo.round > 2) {
+          $('<p class="error" id="added-by-other"><i class="material-icons">error_outline</i> Match found is not a qualification match; please try again with a qualifcation match number</p>').insertBefore('#select-other-match');
+        } else if (matchInfo === -1) {
+          $('<p class="error" id="added-by-other"><i class="material-icons">error_outline</i> Match not found</p>').insertBefore('#select-other-match');
+        }
+        
+        if (needToResetMatchSelector) { //do this after the new match has been added to the page
+          resetMatchSelector();
+        }
+       $('#other-match-num, #submit-other-match').removeAttr("disabled"); //enable submit button and entry field 
+     
+     } else if (!forOtherMatch) {
+       $('<p><i class="material-icons">info_outline</i> No unscored qualification matches</p>').insertBefore('#select-other-match');
+     } else {
+       if(forOtherMatch) { //if this function was called to add the "Other" match, and there is an error, then remove the not-selected style from the other matches being shown
+         resetMatchSelector();
+       }
+       $('<p class="error"><i class="material-icons">error_outline</i> Match not found</p>').insertBefore('#select-other-match');
+     }
+     
+   } else { //status is 0 - an error occurred
+     if (!forOtherMatch) {
+       $('<p><i class="material-icons">error_outline</i> <strong>Couldn\'t get match data because of an error: ' + 
+          data.error.message + '</strong> If you keep getting this error, please use the Send Feedback button at the bottom of the page to get help.</p>').insertBefore('#select-other-match');
+       $('#select-other-match').addClass('hidden'); //Since there was an error, don't show the option to select another match, since the API or something related to it probably isn't working right (and the page should be refreshed, at the very least)
+     }
+   }
+   
+  $('#match-selector-data-loading').addClass('hidden').removeClass('is-active');
+  if (!forOtherMatch) {
+    $('#team-select-container').removeClass('hidden');
+  }
+}
+
+var autonTimeout,
+    driverTimeout,
+    autonWinner = "",
+    autonStartTime,
+    driverStartTime,
+    matchSelected = "",
+    teamSelected = "",
+    matchesVisible = [],
+    markedTimes = {};
+    
+$(document).ready(function() {
+
+  componentHandler.upgradeAllRegistered(); //to make sure the loading spinner appears and not just "Loading..."
+  
+  //load matches for match selector
+  //DISABLE NO REFRESH FLAG!!!!!
+  $('body').append('<script src=\"https://script.google.com/a/macros/woodward.edu/s/AKfycbxsKMe0cdyYScaJXipBoA2bFSY8Aj-jxlQqyS4aDOI/exec?type=getUnscoredMatchInfo&numMatches=3&id=' + instanceID + '&prefix=loadMatchData&norefresh=true\"><\/script>');
+
+
+  
+  $('#start-auton-timer').click(function() {
+     $('#ready-auton').addClass('hidden');
+     $('#auton-timer-running').removeClass('hidden');
+     $('#match-timer').removeClass('timer-stopped').addClass('timer-running');
+     $('.mark-time-auton').removeAttr("disabled");
+     
+     markedTimes.autonStart = new Date().getTime(); //find time passed since this by saving marked time in a variable and then using timeDiffInSecs = new Date (event - autonStart).getSeconds();
+     autonTimeout = setTimeout(endAuton,15000);
+  });
+  
+  $('#btn-stop-auton').click(function() {
+    window.clearTimeout(autonTimeout);
+    showMatchPaused();
+  });
+  
+  //click handlers for auton winner selection
+  $(".auton-winner-option.option-blue-alliance").click(blueAutonWinnerClick);
+  $(".auton-winner-option.option-red-alliance").click(redAutonWinnerClick);
+  $(".auton-winner-option.option-tie").click(tieAutonWinnerClick);
+  
+  
+  $("#btn-driver-start").click(driverPeriodStart); //click handler for driver control period start button
+  
+  
+  $('#btn-stop-driver').click(function() {
+    window.clearTimeout(driverTimeout)
+    showMatchEnd();
+  });
+  
+  $('#team-select-container').on('click','.team-select > .match-row > .row-team.option-red-alliance, .team-select > .match-row > .row-team.option-blue-alliance', matchSelectHandler);
+  
+  $('#select-other-match').click(showOtherInput);
+  $('#submit-other-match').click(loadOtherMatch);
+  
+  $('#other-match-num').change(function() {
+    //console.log("changed");
+    if($('#container-other-match-num').hasClass("is-invalid")) {
+      $('#submit-other-match').attr("disabled","disabled");
+    } else {
+      $('#submit-other-match').removeAttr("disabled");
+    }
+  });
+  
+  
+  $('#robot-auton-start > .option > #enter-time').on("click", showTimeInput);
+  $('#robot-auton-start > .option > .mark-time-auton').on("click", {timeLabel: "autonStartTime"}, markTime);
+});
+
+function updateAutonWinnerDisplay(winner) {
+  if (winner === "blue") {
+    if (!$(".auton-winner-option.option-blue-alliance").hasClass("selected")) { //if the element doesn't already have the selected class, we need to add the selected class and add the not-selected class to the other two options
+      $(".auton-winner-option.option-blue-alliance").removeClass("not-selected").addClass("selected");
+      $(".auton-winner-option.option-red-alliance").removeClass("selected").addClass("not-selected");
+      $(".auton-winner-option.option-tie").removeClass("selected").addClass("not-selected");
+    }
+  } else if (winner === "red") {
+    if (!$(".auton-winner-option.option-red-alliance").hasClass("selected")) { //if the element doesn't already have the selected class, we need to add the selected class and add the not-selected class to the other two options
+      $(".auton-winner-option.option-red-alliance").removeClass("not-selected").addClass("selected");
+      $(".auton-winner-option.option-blue-alliance").removeClass("selected").addClass("not-selected");
+      $(".auton-winner-option.option-tie").removeClass("selected").addClass("not-selected");
+    }
+  } else { //tie
+    if (!$(".auton-winner-option.option-tie").hasClass("selected")) { //if the element doesn't already have the selected class, we need to add the selected class and add the not-selected class to the other two options
+      $(".auton-winner-option.option-tie").removeClass("not-selected").addClass("selected");
+      $(".auton-winner-option.option-red-alliance").removeClass("selected").addClass("not-selected");
+      $(".auton-winner-option.option-blue-alliance").removeClass("selected").addClass("not-selected");
+    }
+  }
+  
+  //change the display to show that the driver period is running if the user has already pressed Start Driver
+  if (markedTimes.driverStart) { //driverStartTime will be a number if the user has pressed Start Driver
+    showDriverRunning();
+  } else { //if the user hasn't already pressed Start Driver, then just hide the "Screen won't change" disclaimer
+    $('#screen-wont-change').addClass('hidden');
+  }
+}
+
+function blueAutonWinnerClick() {
+  if (autonWinner !== "blue") {
+    updateAutonWinnerDisplay("blue");
+    autonWinner = "blue";
+  }
+}
+
+function redAutonWinnerClick() {
+  if (autonWinner !== "red") {
+    updateAutonWinnerDisplay("red");
+    autonWinner = "red";
+  }
+}
+
+function tieAutonWinnerClick() {
+  if (autonWinner !== "tie") {
+    updateAutonWinnerDisplay("tie");
+    autonWinner = "tie";
+  }
+}
+
+function showMatchPaused() {
+  $('.mark-time-auton').attr("disabled","disabled");
+  $('#auton-timer-running').addClass('hidden');
+  $('#match-paused').removeClass('hidden');
+  $('#match-timer').removeClass('timer-running').addClass('timer-paused');
+}
+
+function endAuton() {
+    showMatchPaused();
+}
+
+function endDriver() {
+  showMatchEnd();
+  console.log("Auton start time: " + autonStartTime);
+  console.log("Driver start time: " + driverStartTime);
+  console.log("Auton winner: " + autonWinner);
+}
+
+function showMatchEnd() {
+  if (!autonWinner) { //advance automatically so that the next part works in the event that no autonomous winner has been chosen
+    showDriverRunning();
+  }
+  $('#driver-timer-running').addClass('hidden');
+  $('#match-ended').removeClass('hidden');
+  $('#match-timer').removeClass('timer-running').addClass('timer-stopped');
+  
+  setTimeout(hideTimerBar,3000);
+}
+
+function hideTimerBar() {
+  $('#match-timer').fadeOut(1000,"swing",function() {
+    $('#match-timer').addClass("hidden").removeAttr("style");
+  });
+}
+
+function showDriverRunning() {
+  $('#match-paused').addClass('hidden');
+  $('#driver-timer-running').removeClass('hidden');
+  $('#match-timer').removeClass('timer-paused').addClass('timer-running');
+}
+
+function driverPeriodStart() {
+   markedTimes.driverStart = new Date().getTime();
+   driverTimeout = setTimeout(endDriver,105000);
+   
+   if (autonWinner) { //if the autonomous winner has been selected, change the display to reflect that driver control is in progress
+     showDriverRunning();
+   } else { //otherwise, change the text of the Start Driver button and wait until the user selects the autonomous winner
+     $('#btn-driver-start').text("Driver started").attr("disabled","disabled");
+   }
+   
+}
+
+function resetMatchSelector() {
+  $('#team-select-container').find('div').removeClass('not-selected');
+  //reset match and team selected variables
+  teamSelected = "";
+  matchSelected = "";
+}
+
+function matchSelectHandler(event) {
+
+  var oldTeamSelected = teamSelected,
+      oldMatchSelected = matchSelected;
+      
+  teamSelected = $(this).text();
+  //console.log(teamSelected + " selected as team");
+  
+  matchSelected = $(this).siblings('.match-number').text(); //get the match selected by finding the sibling element to the one clicked with the .match-number class, which contains the match number
+  //console.log("matchSelected: " + matchSelected);
+  //console.log (oldTeamSelected + " " + teamSelected + " " + oldMatchSelected + " " + matchSelected);
+  
+  if (oldTeamSelected !== teamSelected || oldMatchSelected !== matchSelected) { //don't do anything unless a different team was clicked on - the OR for checking if a different match was selected will allow a new team to be selected if the same team is present in more than one of the three matches displayed
+    if (oldMatchSelected !== matchSelected && oldTeamSelected) { //only change which match has the colored background if the new team selected is in a different match and this isn't the first time a team is being clicked on (indicated by whether or not oldTeamSelected is an empty string or not)
+      $('.blue-alliance-selected, .red-alliance-selected').removeClass('blue-alliance-selected red-alliance-selected');
+    }
+    
+    
+    if (teamSelected) { //if there's already a team selected, remove the selected class from that element so the selected class can be added to the newly selected team
+      $('.row-team.selected').removeClass('selected'); //the selector used here is designed to be a little more specific than necessary to reduce the risk of conflicts with other uses of the "selected" class
+    }
+    $(this).removeClass('not-selected').addClass("selected");
+    
+    
+    //distribute classes to further indicate selection: red-/blue-alliance-selected, not-selected
+    if ($(this).hasClass('option-red-alliance')) { //red alliance team selected
+      $(this).parents('.team-select').removeClass('not-selected blue-alliance-selected').addClass('red-alliance-selected'); //remove not-selected and blue-alliance-selected classes in case they are present from previous selections before adding new class
+    } else { //blue alliance team selected
+      $(this).parents('.team-select').removeClass('not-selected red-alliance-selected').addClass('blue-alliance-selected');
+    }
+    
+    $(this).siblings('.row-team.option-red-alliance:not(.selected), .row-team.option-blue-alliance:not(.selected)').addClass('not-selected');
+    $(this).parents('.team-select').siblings('.team-select').addClass('not-selected');
+
+    
+  }
+  
+}
+
+function showOtherInput(event) {
+  event.preventDefault(); //make sure the page doesn't refresh
+  $('#select-other-match').addClass('hidden');
+  $('#show-other').removeClass('hidden');
+}
+
+function loadOtherMatchData(data) {
+  console.log(data);
+  loadMatchData(data, true);
+}
+
+function removeFromArray(val, array) {
+  for (var i = 0; i < array.length; i++) {
+    if (array[i] === val) {
+      array.splice(i, 1);
+      break;
+    }
+  }
+}
+
+function loadOtherMatch() {
+  //console.log("clicked");
+  var matchNum = parseInt($('#other-match-num').val()),
+      matchIsVisible = false;
+      
+  for (var i = 0; i < matchesVisible.length; i++) { //before we load this match, make sure it is not already being displayed
+     if (matchNum === matchesVisible[i]) {
+       matchIsVisible = true;
+       break;
+     }
+  }
+  //console.log(typeof matchNum);
+  //console.log(matchesVisible);
+  
+  if (typeof matchNum === "number" && matchNum >= 1 && !matchIsVisible) { //only make the api request if there's an postive non-zero integer in the match number input
+    
+    $('#added-by-other, #match-is-visible').addClass('hidden');
+    $('#match-selector-data-loading').removeClass('hidden').addClass('is-active'); //show loading spinner
+    $('#other-match-num, #submit-other-match').attr("disabled","disabled"); //disable submit button and entry field
+    $('body').append('<script src=\"https://script.google.com/a/macros/woodward.edu/s/AKfycbxsKMe0cdyYScaJXipBoA2bFSY8Aj-jxlQqyS4aDOI/exec?type=getMatchInfo&id=' + instanceID + '&prefix=loadOtherMatchData&norefresh=true&match=' + matchNum +'\"><\/script>');
+  } else if (matchIsVisible) {
+    $('#match-is-visible').removeClass('hidden');
+  }
+}
+
+/*var radioHandlers = {
+  showInput = function () {
+    return "test";
+  }
+}*/
+function showTimeInput() {
+  console.log("clicked");
+  console.log($(this).attr("handler-function"));
+}
+
+function markTime(event) {
+  markedTimes[event.data.timeLabel] = Date.now();
+  console.log(markedTimes);
+}
+
+</script>
+
+

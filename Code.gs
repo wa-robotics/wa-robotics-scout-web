@@ -103,6 +103,36 @@ function checkAndroidParameter(e) {
   }
 }
 
+//returns a string containing the user properties for a given user
+function getDebugInfo(e) {
+  var props = PropertiesService.getUserProperties().getKeys();
+  var result = "";
+  var value;
+  props.forEach(function (val, index) {
+    value = PropertiesService.getUserProperties().getProperty(val);
+    result += val + " = " + value + " | ";
+  });
+  
+  result += "User account used for authentication: " + Session.getActiveUser().getEmail();
+  
+  var instance = getUserProperty_("id");
+  var instanceUrlParam = e.parameter.id;
+  try {
+    SpreadsheetApp.openById(instance).getEditors();
+  } catch (e) {
+    result += " | Error when verifying spreadsheet access for id saved in user property " + instance + ": " + e;
+  }
+  
+  try {
+    SpreadsheetApp.openById(instanceUrlParam).getEditors();
+  } catch (e) {
+    result += " | Error when verifying spreadsheet access for id supplied in url parameter " + instanceUrlParam + ": " + e;
+  }
+  
+  return result;
+  
+}
+
 function doGet(e) {
   //routing
   var page,
@@ -144,6 +174,10 @@ function doGet(e) {
        page = "team-search";
        checkAndroidParameter(e);
       break;
+     case "scouting-form":
+       page = "scouting-form";
+       checkAndroidParameter(e);
+       break;
    default:
      page = "main";
      checkTeamParameter(e);
@@ -163,6 +197,14 @@ function doGet(e) {
   
   userName = "";
   teamLeader = false;
+/*if (page !== "noData"){
+  for (var i = 0; i < authorizedUsers.length; i++) {
+    if(authorizedUsers[i].getEmail() === Session.getActiveUser().getEmail()) {
+      authorized = true;
+      break;
+    }
+  }
+  }*/
   
   if (authorized) {
     if (page === "main"){
@@ -201,14 +243,27 @@ function doGet(e) {
                      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
                      .setTitle("WA Robotics Scout Web")
                      .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
-      } 
+      } else if (page === "scouting-form") {
+        output = HtmlService.createTemplateFromFile('scoutingForm');
+        output.userName = userName;
+        output.teamLeader = teamLeader;
+        output.teamMemberTeamNum = teamMemberTeamNum;
+        output.reqFromAndroidApp = reqFromAndroidApp;
+        output.instanceID = warsInstanceId;
+        output.teamToLookUp = teamNum;
+        output.promptDefaultTeam = promptDefaultTeam;
+        return output.evaluate()
+              .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+              .setTitle("WA Robotics Scout Web")
+              .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+      }
       else if (page === "noData") {
         output = HtmlService.createTemplateFromFile('noData');
         return output.evaluate()
               .setSandboxMode(HtmlService.SandboxMode.IFRAME)
               .setTitle("WA Robotics Scout Web")
               .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
-        }
+      }
       else { //show not found (404 error) page
         output = HtmlService.createTemplateFromFile('notFound');
         return output.evaluate()
@@ -220,6 +275,11 @@ function doGet(e) {
   } 
   else {
     output = HtmlService.createTemplateFromFile('notAuthorized');
+    if (e.parameter.debug) {
+      output.debugString = getDebugInfo(e);
+    } else {
+      output.debugString = "";
+    }
     return output.evaluate()
       .setSandboxMode(HtmlService.SandboxMode.IFRAME)
       .setTitle("WA Robotics Scout Web")
