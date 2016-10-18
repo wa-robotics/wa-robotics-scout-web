@@ -8,9 +8,12 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     </head>
   <body class="mdl-color--grey-50">
-   <script>var matchNum = <?= matchNum ?>,
-               queryTeam = <?= teamToLookUp ?>,
-               userTeam = <?= teamMemberTeamNum ?>;
+   <script>var queryTeam = <?= teamToLookUp ?>,
+               userTeam = <?= teamMemberTeamNum ?>,
+               reqFromAndroidApp = <?= reqFromAndroidApp ?>,
+               instanceID = <?= instanceID ?>,
+               promptDefaultTeam = <?= promptDefaultTeam ?>,
+               matchNum = <?= matchNum ?>;
    </script> <!--This lets the Javascript on this page use the team GET parameter that may be included in the URL of this page.-->
     <? if(!reqFromAndroidApp) { ?>
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
@@ -23,6 +26,8 @@
         <span class="mdl-layout-title">WARS Web</span>
         <nav class="mdl-navigation">
           <a class="mdl-navigation__link" href="https://script.google.com/a/macros/woodward.edu/s/AKfycbzjo4-KCrLdrFOcpJCwg3kwWYenjFyV8C6aAxfVZs4/exec?page=main">My matches</a>
+          <a class="mdl-navigation__link" href="https://script.google.com/a/macros/woodward.edu/s/AKfycbzjo4-KCrLdrFOcpJCwg3kwWYenjFyV8C6aAxfVZs4/exec?page=team-search">Team search</a>
+          <a class="mdl-navigation__link" href="https://script.google.com/a/macros/woodward.edu/s/AKfycbzjo4-KCrLdrFOcpJCwg3kwWYenjFyV8C6aAxfVZs4/exec?page=scouting-form">Scouting form</a>
         </nav>
       </div>
       <?} ?>
@@ -30,7 +35,6 @@
         <div class="page-content">
           <div class="mdl-grid">
             <div class="mdl-cell--12-col">
-              Hi, <?= userName ?><br />
               <em>Showing latest available information (ratings are not averaged)</em>
             </div>
           </div>
@@ -45,7 +49,7 @@
             </div>
           </div>
           <div class="mdl-grid" id="match-team-info-tables">
-            
+            <div id="match-info-data-loading" class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active"></div>
           </div>
         </div>
      </main>
@@ -57,4 +61,6 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <?!= HtmlService.createHtmlOutputFromFile('matchInfoJs').getContent(); ?>
 </html>
+
+
 

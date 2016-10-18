@@ -177,8 +177,8 @@
   width: 50%;
 }
 
-#container-other-match-num > input, #container-other-match-num > label {
-  font-family: Roboto;
+input, label {
+  font-family: Roboto !important;
 }
 
 #other-match-sel-instructions {
@@ -202,10 +202,13 @@
   margin-top: 5px;
 }
 
+/* 9/24/2016.  Updated bar-radio-select-2 classes to also work in Firefox.  Changed properties denoted with previously
+for reference.  In .bar-radio-select-2 > .option CSS, changed display to inline-block and added whitespace:nowrap and
+specified widths.  See http://stackoverflow.com/questions/18140691/horizontally-aligned-divs-working-in-chrome-but-not-firefox*/
 
-.bar-radio-select-2 > .option > button,  .bar-radio-select-2 > .option > div  {
+.bar-radio-select-2 > .option > button  {
   height: 100px;
-  width: 49.44%;
+  width: 100%; /*previously 49.44%*/
   max-width: 175px;
   background:#CFD8DC;
   margin-left: 0;
@@ -219,19 +222,89 @@
   vertical-align:middle;
   margin: 0 !important;
   background: #fafafa;
-  
+  height: 100px;
+  width: 100%;
+  white-space: normal;
+  display: inline-block;
+  vertical-align: top;
 }
 .bar-radio-select-2 > .option > button[disabled] {
   background: #CFD8DC;
 }
 
 .bar-radio-select-2 > .option {
-  display: inline;
+  display: inline-block; /*previously inline*/
+  white-space: nowrap; /*previously not here*/
+  width: 49.1%; /*49.1% ensures that buttons display corrected in at small display sizes*/
+  max-width: 175px;
 }
 
+.espion-radio-select > .option > .done > .mdl-textfield,
+.espion-radio-select > .option > .done > .mdl-textfield > .mdl-textfield__input,
+.espion-radio-select > .option > .done > .mdl-textfield > .mdl-textfield__label,
+{
+  width: 100% !important;
+  max-width: 175px;
+}
+
+div.question.espion-text > p {
+  margin-bottom: -10px;
+}
+
+.espion-text > .mdl-textfield {
+  width: 100%;
+  max-width: 400px;
+}
 
 .footer {
   height: 75px;
 }
 
+.question > p {
+  font-weight: bold;
+}
+
+.question > p > em {
+  font-weight: normal;
+}
+
+.espion-check-all > label.mdl-checkbox,
+.espion-radio-select > label.mdl-radio {
+  margin-bottom: 15px;
+  margin-left: 15px;
+}
+
+.espion-section-header {
+  font-size: 18px;
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+/* inspired by Bootstrap / http://stackoverflow.com/a/15458733/5434744 / http://stackoverflow.com/a/25564005/5434744 */
+.img-responsive {
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+  display: block;
+  margin: 0;
+}
+
+.soft-hidden {
+  visibility: hidden;
+}
+
+#container-num-locs-entered:not(.hidden) {
+ display: inline;
+}
+
+#obj-locs-response-info {
+  margin-top: 5px;
+}
+
+.espion-text-input {
+  margin: -18px !important;
+}
+
 </style>
+
+

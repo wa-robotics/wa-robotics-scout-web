@@ -1,67 +1,30 @@
 <script>
   function processResults (value) {
-   var data = value.results;
-   console.log(data);
-    //check to see if this is the user's assigned team or a different team, and show a warning if necessary
-    var output,
-        scoutDataAvailable,
-        scoutInfo,
-        launcherType,
-        liftingAbility,
-        easeOfLifting,
-        scoutInfoLength,
-        autonomousLeavesTile,
-        autonStartTime,
-        preloadShootStart,
-        preloadShootEnd,
-        preloadTime,
-        preloadBallsShot,
-        preloadAccuracy,
-        preloadPhrase;
-    for (var i = 0; i < data.length; i++) {
-      output = '<div class="team-info-table-container mdl-cell--2-col-desktop mdl-cell--4-col-tablet mdl-cell--4-col-phone"><h5><strong>' + data[i].position + ' - ' + data[i].result.teamInfo.team 
-              + ' </strong></h5><table class="team-info-table mdl-data-table mdl-js-data-table mdl-shadow--2dp"><tbody>' +
-             '<tr><td class="mdl-data-table__cell--non-numeric">Record</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.teamInfo.wins + '-' + data[i].result.teamInfo.losses + '-' + data[i].result.teamInfo.ties + 
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">Rank</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.teamInfo.rank + 
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">CCWM <i id="ccwm' + i + '" class="material-icons">help </i></td><span for="ccwm' + i + '" class="mdl-tooltip">Calculated contribution to winning margin - how many points this team contributes to their alliance\'s score; higher, positive values are good</span><td class="mdl-data-table__cell--non-numeric">' + data[i].result.teamInfo.ccwm + 
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">OPR</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.teamInfo.opr + 
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">DPR</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.teamInfo.dpr + 
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">SP</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.teamInfo.sp + 
-             '</td></tr>';
-       
-      if (data[i].result.scoutInfo !== -1) {
-         scoutInfoLength = data[i].result.scoutInfo.length;
-         launcherType = (data[i].result.scoutInfo[scoutInfoLength - 1].howDoesThisTeamLaunchBalls === "I didn't see.") ? "Unknown" : data[i].result.scoutInfo[scoutInfoLength - 1].howDoesThisTeamLaunchBalls;
+   var apiResponse = value.results;
+   console.log(apiResponse);
+   var currentTeamInfo;
+    for (var i = 0; i < apiResponse.length; i++) {
+      output = '<div class="team-info-table-container mdl-cell--2-col-desktop mdl-cell--4-col-tablet mdl-cell--4-col-phone"><h5><strong>' + apiResponse[i].position + ' - ' + apiResponse[i].result.team 
+              + ' </strong></h5><table class="team-info-table mdl-data-table mdl-js-data-table mdl-shadow--2dp full-width scouting-table-disp"><thead><tr><th class="mdl-data-table__cell--non-numeric">Property</th><th>Value</th></tr></thead><tbody>';
          
-         if (data[i].result.scoutInfo[scoutInfoLength - 1].whenDoesThisTeamsAutonomousPlayStart === 0 || data[i].result.scoutInfo[scoutInfoLength - 1].noAutonomous === "No autonomous play") {
-           autonStartTime = "No autonomous play";
-         } else {
-           autonStartTime = data[i].result.scoutInfo[scoutInfoLength - 1].whenDoesThisTeamsAutonomousPlayStart + " seconds left";
-         }
-         
-         
-         preloadShootStart = data[i].result.scoutInfo[scoutInfoLength - 1].withHowMuchTimeLeftInTheMatchDoesThisTeamStartShootingItsPreloads;
-         preloadShootEnd = data[i].result.scoutInfo[scoutInfoLength - 1].whenDidTheRobotFinishstopShootingItsPreloads;
-         preloadTime = preloadShootStart - preloadShootEnd;
-         preloadBallsShot = (data[i].result.scoutInfo[scoutInfoLength - 1].ifTheRobotShotMoreOrLessThan24PreloadsEnterTheActualNumberBelow !== "") ? data[i].result.scoutInfo[scoutInfoLength - 1].ifTheRobotShotMoreOrLessThan24PreloadsEnterTheActualNumberBelow : 24;
-         preloadAccuracy = parseInt(data[i].result.scoutInfo[scoutInfoLength - 1].howManyBallsDidTheRobotMakeInTheGoalWhileShooting)/preloadBallsShot*100; 
-         preloadPhrase = (data[i].result.scoutInfo[scoutInfoLength - 1].robotDidNotShootPreloads === "Does not shoot preloads") ? "N/A" : (preloadAccuracy + "% in " + preloadTime + " s");
-         output += '<tr><td class="mdl-data-table__cell--non-numeric">Last scouted match</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.scoutInfo[scoutInfoLength - 1].whatMatchAreYouWatching.substring(0,data[i].result.scoutInfo[scoutInfoLength - 1].whatMatchAreYouWatching.indexOf(" ")) +
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">Autonomous start</td><td class="mdl-data-table__cell--non-numeric">' + autonStartTime +
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">Autonomous score</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.scoutInfo[scoutInfoLength - 1].howManyPointsDidThisRobotAloneScoreDuringAutonomous +
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">X drive</td><td class="mdl-data-table__cell--non-numeric">' +  data[i].result.scoutInfo[scoutInfoLength - 1].doesThisRobotHaveAnXDrivetrain +
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">Launcher type</td><td class="mdl-data-table__cell--non-numeric">' + launcherType +
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">Preload shots</td><td class="mdl-data-table__cell--non-numeric">' + preloadPhrase +
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">High goal</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.scoutInfo[scoutInfoLength - 1].whereDoesThisRobotScoreInTheHighGoal +
-             '</td></tr><tr><td class="mdl-data-table__cell--non-numeric">Lifting</td><td class="mdl-data-table__cell--non-numeric">' + data[i].result.scoutInfo[scoutInfoLength - 1].didThisTeamParticipateInTheEndGameRobotLifting + 
-             '</td></tbody></table></div>';
-      } else {
+        if (apiResponse[i].result.hasOwnProperty("data")) {
+          currentTeamInfo = apiResponse[i].result.data;
+        
+        
+        for (var j = 0; j < currentTeamInfo.length; j++) {
+          output += '<tr><td class="mdl-data-table__cell--non-numeric">' + currentTeamInfo[j].propName + '</td><td class="mdl-data-table__cell--non-numeric">' + currentTeamInfo[j].value + '</td></tr>';
+        }
+            
         output += '</tbody></table></div>';
+      } else {
+        output = '<div class="team-info-table-container mdl-cell--2-col-desktop mdl-cell--4-col-tablet mdl-cell--4-col-phone"><h5><strong>' + apiResponse[i].position + ' - ' + apiResponse[i].result.team 
+              + ' </strong></h5><i class="material-icons">info_outline</i> No data available';
       }
-
       $('#match-team-info-tables').append(output);
     
     }
+    
+    $('#match-info-data-loading').removeClass("is-active").addClass("hidden");
     
   }
   
@@ -109,9 +72,9 @@
         opponent2 = match.red2;
       }
       
-    getTeamInfo(partner);
-    getTeamInfo(opponent1);
-    getTeamInfo(opponent2);
+    //getTeamInfo(partner);
+    //getTeamInfo(opponent1);
+    //getTeamInfo(opponent2);
     console.log(alliance);
     console.log(alliancePosition);
   }
@@ -124,6 +87,7 @@
   }
   
   function initialize() {
+    componentHandler.upgradeAllRegistered(); //to make sure the loading spinner appears and not just "Loading..."
     //show a warning if the user is looking at a match for a different team (one that they aren't on)
     if (userTeam !== queryTeam) {
       if ($('#show-diff-team').hasClass('hidden')) { //only remove the hidden class if it's present
@@ -133,7 +97,8 @@
         $('#show-diff-team').addClass('hidden');
     }
     
-    var url = "https://script.google.com/a/macros/woodward.edu/s/AKfycbxsKMe0cdyYScaJXipBoA2bFSY8Aj-jxlQqyS4aDOI/dev?prefix=processResults&type=getTeamInfoForMatch&id=1vrZQpvtiJvcyKdlULZk5HOyRU5ystAiMZ4y8rF6dJEg&match=" + matchNum;
+    //!!!NO REFRESH IS ENABLED!!!
+    var url = "https://script.google.com/a/macros/woodward.edu/s/AKfycbxsKMe0cdyYScaJXipBoA2bFSY8Aj-jxlQqyS4aDOI/dev?prefix=processResults&type=getTeamInfoForMatch&id=" + instanceID + "&norefresh&match=" + matchNum;
     
     //get match details to determine which teams are competing in this match
     $('body').append('<script src="' + url + '"><\/script>');

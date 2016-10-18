@@ -17,6 +17,14 @@ function saveUserProperty_(key, value) {
   PropertiesService.getUserProperties().deleteProperty("test");
 }*/
 
+function getMatchInfoVexDb() {
+  var db = FirebaseApp.getDatabaseByUrl("https://wa-robotics-scout.firebaseio.com/");
+  
+  
+  
+  db.setData("/match_data/RE-VRC-123-123/0/redscore","23");
+}
+
 function getUserProperty_(key) {
   return PropertiesService.getUserProperties().getProperty(key);
 }
@@ -33,7 +41,7 @@ function test_() {
 * Returns the property name in UserProperties to get the property key needed to retrieve the user's default team for a specific WARS instance
 */
 function getDefaultTeamPropertyName_() {
-  return "defaultTeam-" + getUserProperty_("id");      
+  return "defaultTeam-" + getUserProperty_("id"); 
 }
 
 function checkDefaultTeam() {
@@ -145,7 +153,7 @@ function doGet(e) {
   
   if (typeof e.parameter.id !== "undefined") {
     try {
-       SpreadsheetApp.openById(e.parameter.id);
+       SpreadsheetApp.openById(e.parameter.id); //"1vrZQpvtiJvcyKdlULZk5HOyRU5ystAiMZ4y8rF6dJEg"
     } catch (e) {
     
     }
@@ -205,6 +213,54 @@ function doGet(e) {
     }
   }
   }*/
+/*
+  //TO DO: authentication should ideally interface with WARS spreadsheet
+  var evan = new User('Evan', '17estrat',"1900W",false),
+      alex = new User("Alex", "17adulisse", "1900W", false),
+      crawford = new User('Crawford', '17ckennedy',"1900W",false),
+      hipp = new User('Mr. Hipp', 'tim.hipp',"1900W", false),
+      cameron = new User('Cameron', '18ckriegel',"1900W", false),
+      brandon = new User('Brandon', '16bsnapperman',"1900W", false),
+      wyatta = new User('Wyatt', '17watchison',"1900W", false),
+      wyattj = new User('Wyatt','19wjohnson','1900W',false),
+      yari = new User('Yari', '16ymosley',"1900W", false),
+      marc = new User('Marc', '18mhammond',"1900W", false),
+      faiz = new User('Faiz', '18fessa',"1900W", false),
+      gibran = new User('Gibran', '17gessa',"1900W", false),
+      prasanth = new User('Prasanth', '18pgudur',"1900W", false),
+      kia = new User('Kia Jie', '17kjacobs',"1900W", false),
+      jeremy = new User('Jeremy', '17jkopelman',"1900W", false),
+      allen = new User('Allen', '16ahulette', "1900W", false),
+      authorizedUsers = [evan, alex, crawford, hipp, cameron, brandon,
+                         wyatta, wyattj, yari, marc, faiz, gibran, prasanth,
+                         kia, jeremy, allen];
+      
+  if (Session.getActiveUser().getEmail().indexOf("@woodward.edu") === -1) {
+    authorized = false;
+  } else {
+    var userEmail = Session.getActiveUser().getEmail();
+    var emailString;
+    var foundEmail = false;
+    var teamLeader = false;
+    for (var i = 0; i < authorizedUsers.length; i++) {
+      emailString = authorizedUsers[i].username + "@woodward.edu";
+      if (emailString === userEmail) {
+        foundEmail = true;
+        var teamLeader = authorizedUsers[i].teamLeader,
+            userName = authorizedUsers[i].name;
+        if (!showDifferentTeam) { //if the user isn't requesting data about a team other than their own (assuming they are associated with a team)
+          teamNum = authorizedUsers[i].team;
+        }
+          teamMemberTeamNum = authorizedUsers[i].team;
+        Logger.log(teamNum);
+      }
+    }
+    if(!foundEmail) { //if the user's email isn't recognized in the list of approved email addresses
+      authorized = false;
+    }
+  
+  }*/
+  
   
   if (authorized) {
     if (page === "main"){
@@ -219,30 +275,35 @@ function doGet(e) {
       return output.evaluate()
             .setSandboxMode(HtmlService.SandboxMode.IFRAME)
             .setTitle("WA Robotics Scout Web")
-            .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+            .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+            .setFaviconUrl("https://wa-robotics-scout-web-assets.firebaseapp.com/favicon.ico");
       } else if (page === "match") {
         output = HtmlService.createTemplateFromFile('matchInfo');
         output.userName = userName;
         output.teamLeader = teamLeader;
         output.team = teamNum;
         output.matchNum = match;
+        output.instanceID = warsInstanceId;
         output.teamMemberTeamNum = teamMemberTeamNum;
         output.reqFromAndroidApp = reqFromAndroidApp;
         output.teamToLookUp = teamNum;
         return output.evaluate()
                      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
                      .setTitle("WA Robotics Scout Web")
-                     .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+                     .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+                     .setFaviconUrl("https://wa-robotics-scout-web-assets.firebaseapp.com/favicon.ico");
       } else if (page === "team-search") {
         output = HtmlService.createTemplateFromFile('teamSearch');
         output.userName = userName;
         output.teamLeader = teamLeader;
         output.teamMemberTeamNum = teamMemberTeamNum;
+        output.instanceID = warsInstanceId;
         output.reqFromAndroidApp = reqFromAndroidApp;
         return output.evaluate()
                      .setSandboxMode(HtmlService.SandboxMode.IFRAME)
                      .setTitle("WA Robotics Scout Web")
-                     .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+                     .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+                     .setFaviconUrl("https://wa-robotics-scout-web-assets.firebaseapp.com/favicon.ico");
       } else if (page === "scouting-form") {
         output = HtmlService.createTemplateFromFile('scoutingForm');
         output.userName = userName;
@@ -255,21 +316,24 @@ function doGet(e) {
         return output.evaluate()
               .setSandboxMode(HtmlService.SandboxMode.IFRAME)
               .setTitle("WA Robotics Scout Web")
-              .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+              .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+              .setFaviconUrl("https://wa-robotics-scout-web-assets.firebaseapp.com/favicon.ico");
       }
       else if (page === "noData") {
         output = HtmlService.createTemplateFromFile('noData');
         return output.evaluate()
               .setSandboxMode(HtmlService.SandboxMode.IFRAME)
               .setTitle("WA Robotics Scout Web")
-              .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+              .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+              .setFaviconUrl("https://wa-robotics-scout-web-assets.firebaseapp.com/favicon.ico");
       }
       else { //show not found (404 error) page
         output = HtmlService.createTemplateFromFile('notFound');
         return output.evaluate()
               .setSandboxMode(HtmlService.SandboxMode.IFRAME)
               .setTitle("WA Robotics Scout Web")
-              .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+              .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+              .setFaviconUrl("https://wa-robotics-scout-web-assets.firebaseapp.com/favicon.ico");
         }
       Logger.log(output.getCode());
   } 
@@ -283,6 +347,7 @@ function doGet(e) {
     return output.evaluate()
       .setSandboxMode(HtmlService.SandboxMode.IFRAME)
       .setTitle("WA Robotics Scout Web")
-      .addMetaTag("viewport", "width=device-width, initial-scale=1.0");
+      .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
+      .setFaviconUrl("https://wa-robotics-scout-web-assets.firebaseapp.com/favicon.ico");
   }
 }

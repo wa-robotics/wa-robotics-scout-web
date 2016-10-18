@@ -1,1 +1,27 @@
+<script>
+  $(document).ready(function() {
+    $("#search").click(function() {
+      var search = $("#search-team").val();
+      if (/^[0-9]{1,5}[a-zA-Z]?$/.test(search)) {
+        getTeamInfo(search);
+      }
+      
+    });
+  });
+  
+  function processResults (value) {
+   var data = value.results;
+     console.log(data);
+   
+   }
+  
+  function getTeamInfo(team) {
+    //!!! NO REFRESH IS ENABLED!!!
+    var url = "https://script.google.com/a/macros/woodward.edu/s/AKfycbxsKMe0cdyYScaJXipBoA2bFSY8Aj-jxlQqyS4aDOI/dev?prefix=processResults&norefresh&type=getTeamInfo&id=1vrZQpvtiJvcyKdlULZk5HOyRU5ystAiMZ4y8rF6d&id=" + instanceID + "&team=" + team;
+    
+    //get match details to determine which teams are competing in this match
+    $('body').append('<script src="' + url + '"><\/script>');
+    
+  }
 
+</script>
