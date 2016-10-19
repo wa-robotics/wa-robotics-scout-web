@@ -1,5 +1,7 @@
+<script src="https://www.gstatic.com/firebasejs/3.5.0/firebase.js"></script>
 <script>
   $(document).ready(function() {
+    
     $('#feedback-form-link').click(function(e) {
       e.preventDefault();
       if (reqFromAndroidApp) { //make sure this function can't be accidentally run from outside the Android app

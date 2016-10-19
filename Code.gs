@@ -17,12 +17,15 @@ function saveUserProperty_(key, value) {
   PropertiesService.getUserProperties().deleteProperty("test");
 }*/
 
-function getMatchInfoVexDb() {
-  var db = FirebaseApp.getDatabaseByUrl("https://wa-robotics-scout.firebaseio.com/");
+
+function getMatchInfoVexDb(sku) {
+  sku = "RE-VRC-16-3279";
+  var db = FirebaseApp.getDatabaseByUrl("https://wa-robotics-scout.firebaseio.com/",getFirebaseSecret_());
   
-  
-  
-  db.setData("/match_data/RE-VRC-123-123/0/redscore","23");
+  var url = "http://api.vexdb.io/v1/get_matches?sku=" + sku;
+  var results = UrlFetchApp.fetch(url).getContentText();
+  var resultsParsed = JSON.parse(results);
+  db.setData("/match_data/RE-VRC-123-123/",resultsParsed.result);
 }
 
 function getUserProperty_(key) {
