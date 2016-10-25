@@ -1,4 +1,3 @@
-<script src="https://www.gstatic.com/firebasejs/3.5.0/firebase.js"></script>
 <script>
   $(document).ready(function() {
     
@@ -272,9 +271,7 @@
     $('body').append('<script id="api-request" type="text/javascript" src="' + url + '"><\/script>');
   }
   
-  /*if(fromAndroidApp) { //this is a framework that will be used in the future to link the navigation drawer to page loads on the Android app
-     Android.showToast("Testing!");  
-  }*/
+  
   
   //modalInit();
   
@@ -293,12 +290,89 @@
   //console.log(userTeam);
   
   //console.log("promptDefaultTeam is " + promptDefaultTeam + " of type " + typeof promptDefaultTeam);
-  if (promptDefaultTeam === "true") { //promptDefaultTeam becomes a string when it is inserted into a script tag (in index.html) with a printing scriptlet
+  /*if (promptDefaultTeam === "true") { //promptDefaultTeam becomes a string when it is inserted into a script tag (in index.html) with a printing scriptlet
     var dialog = document.querySelector('#default-team-select-dialog');
     console.log("promptDefaultTeam is " + promptDefaultTeam);
     dialog.showModal();
   } else if(queryTeam) {
     getTeamMatches(queryTeam);
+  }*/
+
+
+
+
+  var config = {
+      apiKey: "AIzaSyAIvK9HrI4P7MJlzjOHmcWeja2BPEInuTo",
+      authDomain: "wa-robotics-scout.firebaseapp.com",
+      databaseURL: "https://wa-robotics-scout.firebaseio.com",
+      storageBucket: "wa-robotics-scout.appspot.com",
+      messagingSenderId: "490870467180"
+      };
+  firebaseInit();
+  
+  var globalInfo = {};
+
+  function setDropdownMenuItems(menuId, valueList, displayValueList,emptyFirst,typeString) {
+    menuId = "#" + menuId;
+    if (emptyFirst) {
+      $(menuId).empty().append("<option class='hidden' value=''>Select an " + typeString + "</option>");
+    }
+    for (var i = 0; i < displayValueList.length; i++) {
+      console.log(i)
+      $(menuId).append("<option value='" + valueList[i] + "'>" + displayValueList[i] + "</option>");
+    }
+  }
+
+  function getOrgInfo(org, userId) {
+      firebase.database().ref('/organizations/' + org).once('value').then(function(snapshot) {
+        globalInfo.orgInfo = snapshot.val();
+        setDropdownMenuItems("org-select",[globalInfo.userorgs[0]],[globalInfo.orgInfo.name],true,"organization");
+        $('#org-select').removeAttr("disabled");
+        $('#org-short-name').text(globalInfo.orgInfo.short_name);
+        setDropdownMenuItems("team-select",globalInfo.orgInfo.teams,globalInfo.orgInfo.teams,true,"team");
+        $('#team-select').removeAttr("disabled");
+    });
+  }
+
+  function getUserOrgs() {
+     var userId = firebase.auth().currentUser.uid;
+     firebase.database().ref('/users/' + userId).once('value').then(function(snapshot) {
+         globalInfo.userorgs = snapshot.val().userorgs;
+         getOrgInfo(globalInfo.userorgs[0], userId);
+      });
+     
+     return globalInfo.userorgs;
+      
+  }
+
+  function firebaseInit() {
+    firebase.initializeApp(config);
   }
   
+  function writeUserData(userId, name, email, imageUrl) {
+    firebase.database().ref('users/' + userId).set({
+      username: name,
+      email: email,
+      profile_picture : imageUrl,
+      organizations: []
+    });
+  }
+  
+
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      signedInUser = user;
+      $('#sign-in').hide();
+      firebase.database().ref('users/' + user.uid).once('value').then(function(snapshot) {
+        if (!snapshot.val()) {
+          writeUserData(signedInUser.uid,signedInUser.displayName,signedInUser.email, signedInUser.photoURL);
+          
+        }
+        getUserOrgs();
+      });
+    }
+  
+  });
+  
+  //google.script.run.withSuccessHandler().getMatchInfoVexDb(teamMemberTeamNum);
 </script>

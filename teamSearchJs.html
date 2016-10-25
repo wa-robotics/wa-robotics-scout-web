@@ -1,41 +1,68 @@
 <script src="https://www.gstatic.com/firebasejs/3.5.0/firebase.js"></script>
 <script>
+  
+</script>
+
+<script>
+  console.log("firebase init");
+
   var config = {
-    apiKey: "AIzaSyAIvK9HrI4P7MJlzjOHmcWeja2BPEInuTo",
-    authDomain: "wa-robotics-scout.firebaseapp.com",
-    databaseURL: "https://wa-robotics-scout.firebaseio.com",
-    storageBucket: "wa-robotics-scout.appspot.com",
-    messagingSenderId: "490870467180"
-    };
-    var userAuthToken;
-  /*google.script.run.withSuccessHandler(function (requestAuthToken) {
-    userAuthToken = requestAuthToken;
-    console.log(userAuthToken);
-    authenticateClient(userAuthToken);
-  }).test3();*/
-  firebase.initializeApp(config);
-  //signIn();
-  //var user;
+      apiKey: "AIzaSyAIvK9HrI4P7MJlzjOHmcWeja2BPEInuTo",
+      authDomain: "wa-robotics-scout.firebaseapp.com",
+      databaseURL: "https://wa-robotics-scout.firebaseio.com",
+      storageBucket: "wa-robotics-scout.appspot.com",
+      messagingSenderId: "490870467180"
+      };
+          firebaseInit();
+  var globalInfo = {};
+
+  function getOrgTeams(org, userId) {
+      console.log('/organizations/' + org + '/teams');
+      firebase.database().ref('/organizations/' + org + '/teams').once('value').then(function(snapshot) {
+        globalInfo.teams = snapshot.val();
+    });
+  }
+
+  function getUserOrgs() {
+     var userId = firebase.auth().currentUser.uid;
+     firebase.database().ref('/users/' + userId).once('value').then(function(snapshot) {
+         globalInfo.userorgs = snapshot.val().userorgs;
+         getOrgTeams(globalInfo.userorgs[0], userId);
+      });
+     
+     return globalInfo.userorgs;
+      
+  }
+  console.log("global js ran");
+
+  function firebaseInit() {
+    console.log("init ran")
+    firebase.initializeApp(config);
+  }
   function writeUserData(userId, name, email, imageUrl) {
-  firebase.database().ref('users/' + userId).set({
-    username: name,
-    email: email,
-    profile_picture : imageUrl,
-    organizations: {}
-  });
-}
-   var signedInUser;
+    firebase.database().ref('users/' + userId).set({
+      username: name,
+      email: email,
+      profile_picture : imageUrl,
+      organizations: []
+    });
+  }
+  
+
   firebase.auth().onAuthStateChanged(function(user) {
     if (user) {
       signedInUser = user;
       firebase.database().ref('users/' + user.uid).once('value').then(function(snapshot) {
         if (!snapshot.val()) {
           writeUserData(signedInUser.uid,signedInUser.displayName,signedInUser.email, signedInUser.photoURL);
+          
         }
+        console.log(getUserOrgs());
       });
-        
+      
       
       $('#sign-in').hide();
+
     } else {
       console.log("Not signed in");
     }
@@ -48,6 +75,8 @@
       var token = result.credential.accessToken;
       // The signed-in user info.
       var user = result.user;
+      signedInUser = user;
+      console.log(signedInUser);
       console.log("Login Succeeded!");
       console.log(user);
       // ...
@@ -63,23 +92,7 @@
       console.log("Login Failed!");
       console.log(errorCode, errorMessage,email,credential);
     });
-  }
-  function authenticateClient(userRequestToken) {
-    firebase.initializeApp(config);
-    firebase.auth().signInWithCustomToken(userRequestToken).catch(function(error) {
-      if (error) {
-        console.log("Login Failed!", error);
-      }
-      else {
-        console.log("Login Succeeded!", authData);      
-        }
-      });
-       
-    }
-        
-</script>
 
-<script>
   $(document).ready(function() {
     $("#search").click(function() {
       var search = $("#search-team").val();
@@ -104,5 +117,5 @@
     $('body').append('<script src="' + url + '"><\/script>');
     
   }
-
+}
 </script>
