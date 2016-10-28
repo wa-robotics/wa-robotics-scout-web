@@ -312,36 +312,52 @@
   
   var globalInfo = {};
 
-  function setDropdownMenuItems(menuId, valueList, displayValueList,emptyFirst,typeString) {
+  function setDropdownMenuItems(menuId, valueList, displayValueList,emptyFirst,defaultString) {
     menuId = "#" + menuId;
     if (emptyFirst) {
-      $(menuId).empty().append("<option class='hidden' value=''>Select an " + typeString + "</option>");
+      $(menuId).empty().append("<option class='hidden' value=''>" + defaultString + "</option>");
     }
     for (var i = 0; i < displayValueList.length; i++) {
-      console.log(i)
       $(menuId).append("<option value='" + valueList[i] + "'>" + displayValueList[i] + "</option>");
     }
+    $(menuId).removeAttr("disabled");
   }
 
   function getOrgInfo(org, userId) {
       firebase.database().ref('/organizations/' + org).once('value').then(function(snapshot) {
         globalInfo.orgInfo = snapshot.val();
-        setDropdownMenuItems("org-select",[globalInfo.userorgs[0]],[globalInfo.orgInfo.name],true,"organization");
+        setDropdownMenuItems("org-select",[globalInfo.userorgs[0]],[globalInfo.orgInfo.name],true,"Select an organization");
         $('#org-select').removeAttr("disabled");
         $('#org-short-name').text(globalInfo.orgInfo.short_name);
-        setDropdownMenuItems("team-select",globalInfo.orgInfo.teams,globalInfo.orgInfo.teams,true,"team");
+        setDropdownMenuItems("team-select",globalInfo.orgInfo.teams,globalInfo.orgInfo.teams,true,"Select a team");
         $('#team-select').removeAttr("disabled");
     });
+  }
+  
+  function resetDropdowns() {
+     $('#org-select').empty().append('<option class="hidden" value="">Select an organization</option>').attr('disabled','disabled');
+    $('#tournament-select').empty().append('<option class="hidden" value="">Select a tournament</option>').attr('disabled','disabled');
+    $('#team-select').empty().append('<option class="hidden" value="">Select a team</option>').attr('disabled','disabled');
+  }
+
+  function fillOrgSelect(orgs) {
+    var i = 0;
+    resetDropdowns();
+    while (i < orgs.length) {
+      firebase.database().ref('/organizations/' + orgs[i]).once('value').then(function (snapshot) {
+         setDropdownMenuItems("org-select",[snapshot.key],[snapshot.val().name], false, "");
+      }).catch(function(error) {  }); 
+      i++;
+    }
+    
   }
 
   function getUserOrgs() {
      var userId = firebase.auth().currentUser.uid;
      firebase.database().ref('/users/' + userId).once('value').then(function(snapshot) {
          globalInfo.userorgs = snapshot.val().userorgs;
-         getOrgInfo(globalInfo.userorgs[0], userId);
+         fillOrgSelect(globalInfo.userorgs);
       });
-     
-     return globalInfo.userorgs;
       
   }
 
