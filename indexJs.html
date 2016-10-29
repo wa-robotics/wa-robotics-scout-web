@@ -8,6 +8,7 @@
       }
     });
     $('#default-team-save').click(saveDefaultTeam);
+    $('#org-select').change(loadTournamentInfo)
   });
   
   function saveDefaultTeam() {
@@ -339,6 +340,36 @@
     $('#tournament-select').empty().append('<option class="hidden" value="">Select a tournament</option>').attr('disabled','disabled');
     $('#team-select').empty().append('<option class="hidden" value="">Select a team</option>').attr('disabled','disabled');
   }
+  
+  function getTournamentName(tournament) {
+    var result;
+    console.log("tournament",tournament);
+    firebase.database().ref('/tournaments_names_orgs/' + tournament).once('value').then(function (snapshot) {
+      result = snapshot.val();
+      setDropdownMenuItems("tournament-select",[tournament], [result], false, "");
+    });
+
+    
+  }
+  
+  function loadTournamentInfo() {
+    console.log("called")
+    var currentOrg = $('#org-select').val();
+    $('#tournament-select').empty().append('<option class="hidden" value="">Select a tournament</option>').attr('disabled','disabled');
+    $('#team-select').empty().append('<option class="hidden" value="">Select a team</option>').attr('disabled','disabled');
+    firebase.database().ref('/organizations/' + currentOrg + '/tournaments').once('value').then(function (snapshot) {
+     for (var i = 0; i < snapshot.val().length; i++) {
+       getTournamentName(snapshot.val()[i]);
+     }
+   },function(error) {}).then(function() {
+       firebase.database().ref('/organizations/' + currentOrg + '/teams').once('value').then(function (snapshot) {
+         setDropdownMenuItems("team-select",snapshot.val(),snapshot.val(),true, "Select a team");
+       });
+   
+   
+   });
+  }
+  
 
   function fillOrgSelect(orgs) {
     var i = 0;
